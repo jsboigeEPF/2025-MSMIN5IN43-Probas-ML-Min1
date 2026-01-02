@@ -1,7 +1,8 @@
-# scripts/train_ames.py
 """
 Entraîne un modèle RandomForest + calibration MAPIE sur le dataset Ames Housing.
-Exige : avoir placé le CSV Ames (par ex. 'data/ames.csv') avec la colonne cible 'SalePrice'.
+- Exclut les colonnes d'identifiant 'Order' et 'PID' des features.
+- Supprime le DEBUG.
+- Sauvegarde, en plus du modèle MAPIE, un mapping 'feature_types' (numeric/categorical).
 Usage:
     python scripts/train_ames.py
 """
@@ -60,14 +61,26 @@ def make_onehot_encoder_compat():
         return OneHotEncoder(handle_unknown="ignore", sparse_output=False)
 
 
-def build_pipeline(df: pd.DataFrame):
-    # Identifier colonnes (exclure explicitement la cible)
-    X = df.drop(columns=["SalePrice"])
-    # Utiliser select_dtypes pour couvrir plusieurs types numériques
+def build_pipeline_and_types(df: pd.DataFrame, exclude_ids: list = None):
+    """
+    Construit la pipeline et renvoie (pipeline, feature_cols, feature_types)
+    feature_types: dict feature_name -> 'numeric'|'categorical'|'unknown'
+    """
+    if exclude_ids is None:
+        exclude_ids = ["Order", "PID"]
+
+    # Exclure explicitement les colonnes d'ID si elles existent
+    df_cols = df.columns.tolist()
+    cols_to_drop = [c for c in exclude_ids if c in df_cols]
+    if cols_to_drop:
+        print(f"Excluding ID columns from features: {cols_to_drop}")
+
+    X = df.drop(columns=["SalePrice"] + cols_to_drop, errors="ignore")
+    # select numeric and categorical
     numeric_cols = X.select_dtypes(include=["number"]).columns.tolist()
     categorical_cols = X.select_dtypes(include=["object", "category"]).columns.tolist()
 
-    # Transformers
+    # Build simple transformers
     num_tf = SimpleImputer(strategy="median")
     ohe = make_onehot_encoder_compat()
     cat_tf = Pipeline(steps=[
@@ -85,64 +98,61 @@ def build_pipeline(df: pd.DataFrame):
     )
 
     rf = RandomForestRegressor(n_estimators=200, n_jobs=-1, random_state=42)
-
     pipeline = Pipeline(steps=[("preproc", preproc), ("model", rf)])
-    # feature_cols = noms originaux des features (ordre : numériques puis catégoriques)
+
+    # feature order: numeric then categorical (original column names)
     feature_cols = numeric_cols + categorical_cols
-    return pipeline, feature_cols
+
+    # feature types mapping
+    feature_types = {}
+    for c in feature_cols:
+        if c in numeric_cols:
+            feature_types[c] = "numeric"
+        elif c in categorical_cols:
+            feature_types[c] = "categorical"
+        else:
+            feature_types[c] = "unknown"
+
+    return pipeline, feature_cols, feature_types
 
 
-def extract_lower_upper_from_mapie_y_pis(y_pred: np.ndarray, y_pis: np.ndarray):
+def extract_lower_upper_from_mapie(y_pred: np.ndarray, y_pis: np.ndarray):
     """
-    Fonction robuste pour extraire lower et upper à partir de y_pis retourné par MAPIE.
-    gère plusieurs formats de sortie :
-      - (n_samples, n_alpha, 2)  -> lower = y_pis[:,0,0], upper = y_pis[:,0,1]
-      - (n_samples, 2)           -> lower = y_pis[:,0], upper = y_pis[:,1]
-      - (n_samples, n_alpha, 1)  -> on interprète la valeur comme delta et on fait pred +/- delta
-      - (n_samples, 1)           -> idem
-      - (n_samples, 2, 1)        -> squeeze last dim -> (n_samples,2)
-    Retour: lower, upper (np.ndarray)
+    Robust extraction of lower and upper intervals from MAPIE y_pis.
+    Handles shapes like (n, n_alpha, 2), (n,2), (n, n_alpha, 1) etc.
     """
-    y_pis = np.asarray(y_pis)
-    print(f"DEBUG: y_pis.shape = {y_pis.shape}")
-
-    if y_pis.ndim == 3:
-        n_samples, n_alpha, last = y_pis.shape
-        # cas attendu : last == 2
+    arr = np.asarray(y_pis)
+    if arr.ndim == 3:
+        n_samples, n_alpha, last = arr.shape
         if last == 2:
-            lower = y_pis[:, 0, 0]
-            upper = y_pis[:, 0, 1]
+            lower = arr[:, 0, 0]
+            upper = arr[:, 0, 1]
             return lower, upper
-        # cas (n_samples, 2, 1) ou similaire
-        if last == 1 and n_alpha == 2:
-            arr = y_pis.squeeze(axis=2)  # shape (n_samples, 2)
+        if last == 1:
+            # e.g. shape (n,2,1) -> squeeze or interpret as delta
+            if n_alpha == 2:
+                squeezed = arr.squeeze(axis=2)  # (n,2)
+                lower = squeezed[:, 0]
+                upper = squeezed[:, 1]
+                return lower, upper
+            delta = arr[:, 0, 0]
+            lower = y_pred - delta
+            upper = y_pred + delta
+            return lower, upper
+        raise RuntimeError(f"Unexpected y_pis shape (ndim==3): {arr.shape}")
+    elif arr.ndim == 2:
+        if arr.shape[1] == 2:
             lower = arr[:, 0]
             upper = arr[:, 1]
             return lower, upper
-        # cas (n_samples, n_alpha, 1) -> on utilise delta = y_pis[:,0,0] comme demi-largeur
-        if last == 1:
-            delta = y_pis[:, 0, 0]
+        if arr.shape[1] == 1:
+            delta = arr[:, 0]
             lower = y_pred - delta
             upper = y_pred + delta
             return lower, upper
-        raise RuntimeError(f"Format inattendu y_pis (ndim==3) : shape={y_pis.shape}")
-
-    elif y_pis.ndim == 2:
-        # cas fréquent (n_samples, 2)
-        if y_pis.shape[1] == 2:
-            lower = y_pis[:, 0]
-            upper = y_pis[:, 1]
-            return lower, upper
-        # cas (n_samples, 1) -> delta
-        if y_pis.shape[1] == 1:
-            delta = y_pis[:, 0]
-            lower = y_pred - delta
-            upper = y_pred + delta
-            return lower, upper
-        raise RuntimeError(f"Format inattendu y_pis (ndim==2) : shape={y_pis.shape}")
-
+        raise RuntimeError(f"Unexpected y_pis shape (ndim==2): {arr.shape}")
     else:
-        raise RuntimeError(f"Format inattendu y_pis (ndim={y_pis.ndim})")
+        raise RuntimeError(f"Unexpected y_pis ndim: {arr.ndim}")
 
 
 def main():
@@ -152,15 +162,15 @@ def main():
     if "SalePrice" not in df.columns:
         raise ValueError("Le CSV doit contenir la colonne cible 'SalePrice'.")
 
+    # Construire pipeline et inférer types, en excluant Order & PID
+    pipeline, feature_cols, feature_types = build_pipeline_and_types(df, exclude_ids=["Order", "PID"])
+
     # Séparer X/y en DataFrame/Series (important pour ColumnTransformer)
-    X = df.drop(columns=["SalePrice"])
+    X = df.drop(columns=["SalePrice"] + [c for c in ("Order", "PID") if c in df.columns], errors="ignore")
     y = df["SalePrice"]
 
     # Split train / calibration (on garde DataFrame pour X)
     X_train, X_cal, y_train, y_cal = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    # Construire pipeline
-    pipeline, feature_cols = build_pipeline(df)
 
     print("Entraînement du pipeline (préproc + RandomForest)...")
     pipeline.fit(X_train, y_train)
@@ -172,27 +182,17 @@ def main():
 
     # Coverage empirique
     y_pred_cal, y_pis_cal = mapie.predict(X_cal, alpha=0.05)
-
-    # Extraire bornes de manière robuste
-    try:
-        lower, upper = extract_lower_upper_from_mapie_y_pis(y_pred_cal, y_pis_cal)
-    except RuntimeError as e:
-        # Afficher diagnostic détaillé puis ré-élever
-        print(f"Erreur lors de l'extraction des intervalles MAPIE: {e}")
-        print("Types/shape debug :")
-        print(" - type(y_pred_cal):", type(y_pred_cal), "shape:", getattr(y_pred_cal, "shape", None))
-        print(" - type(y_pis_cal):", type(y_pis_cal), "shape:", getattr(np.asarray(y_pis_cal), "shape", None))
-        raise
-
+    lower, upper = extract_lower_upper_from_mapie(y_pred_cal, y_pis_cal)
     coverage = float(np.mean((y_cal.values >= lower) & (y_cal.values <= upper)))
     print(f"Couverture empirique sur calibration (alpha=0.05): {coverage:.3f}")
 
-    # Sauvegarde du modèle (même format que l'API attend)
+    # Sauvegarde du modèle (même format que l'API attend) avec feature_types
     saved = {
         "model": mapie,
         "feature_names": feature_cols,  # liste des colonnes originales (X columns)
         "target_name": "SalePrice",
         "alpha_default": 0.05,
+        "feature_types": feature_types,
     }
     model_path = MODELS_DIR / "ames_rf_mapie.joblib"
     joblib.dump(saved, model_path)

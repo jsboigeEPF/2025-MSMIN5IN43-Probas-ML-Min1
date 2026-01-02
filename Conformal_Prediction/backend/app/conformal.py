@@ -1,4 +1,3 @@
-# app/conformal.py
 """
 Utilities pour entraîner un modèle (RandomForest par défaut) et calibrer avec MAPIE,
 puis prédire des intervalles conformes.

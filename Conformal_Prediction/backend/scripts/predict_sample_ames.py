@@ -1,10 +1,9 @@
-# scripts/predict_sample_ames.py
 import requests
 import pandas as pd
 import numpy as np
 
 API_URL = "http://127.0.0.1:8000/predict"
-MODEL_PATH = "models/ames_rf_mapie.joblib"
+MODEL_FILENAME = "ames_rf_mapie.joblib"  # nom du fichier dans le dossier models/
 CSV_PATH = "data/ames.csv"
 
 def build_instance_from_csv(n=1):
@@ -15,18 +14,15 @@ def build_instance_from_csv(n=1):
         X = df
     X = X.head(n).copy()
 
-    # Remplacer NaN par None et convertir types numpy -> types Python natifs
     def sanitize_value(v):
         if pd.isna(v):
             return None
-        # numpy integer/floating/bool -> python native
         if isinstance(v, (np.integer,)):
             return int(v)
         if isinstance(v, (np.floating,)):
             return float(v)
         if isinstance(v, (np.bool_,)):
             return bool(v)
-        # pandas Timestamp -> isoformat string
         if isinstance(v, (pd.Timestamp,)):
             return v.isoformat()
         return v
@@ -39,7 +35,7 @@ def build_instance_from_csv(n=1):
 
 def main():
     instances = build_instance_from_csv(n=3)
-    payload = {"model_path": MODEL_PATH, "instances": instances, "alpha": 0.05}
+    payload = {"model_filename": MODEL_FILENAME, "instances": instances, "alpha": 0.05}
     resp = requests.post(API_URL, json=payload)
     if resp.status_code == 200:
         for i, item in enumerate(resp.json()):

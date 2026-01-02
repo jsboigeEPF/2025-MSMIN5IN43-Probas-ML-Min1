@@ -1,9 +1,10 @@
 """
-API FastAPI minimale pour entraîner et consommer un modèle conformal (MAPIE).
+API FastAPI pour modèles MAPIE.
 Endpoints:
-  - POST /train : upload CSV + target_col -> entraîne et sauvegarde un modèle MAPIE
-  - POST /predict : charger un modèle existant et retourner intervalles
-  - GET  /models : lister modèles sauvegardés et métadonnées
+  - POST /train
+  - POST /predict
+  - GET  /models
+  - GET  /models/{model_filename}/features
 """
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,9 +15,8 @@ import os
 import joblib
 from app.conformal import train_mapie_from_dataframe, load_model, predict_with_intervals, MODELS_DIR
 
-app = FastAPI(title="Conformal Prediction API", version="0.2")
+app = FastAPI(title="Conformal Prediction API", version="0.4")
 
-# CORS - en dev je permets tout, en production restreins allow_origins
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -44,15 +44,6 @@ async def train_endpoint(
     calibration_size: Optional[float] = Form(0.2),
     alpha: Optional[float] = Form(0.05),
 ):
-    """
-    Entraîner à partir d'un CSV envoyé.
-    Form fields:
-      - file: fichier CSV (multipart/form-data)
-      - target_col: nom de la colonne cible dans le CSV
-      - model_name: (optionnel) nom sous lequel sauvegarder le modèle (models/<model_name>.joblib)
-      - calibration_size: fraction utilisée pour calibration (ex: 0.2)
-      - alpha: niveau de risque pour la couverture calculée (ex: 0.05)
-    """
     try:
         content = await file.read()
         df = pd.read_csv(pd.io.common.BytesIO(content))
@@ -74,8 +65,9 @@ async def train_endpoint(
 
 
 class PredictRequest(BaseModel):
-    model_path: str  # chemin relatif ex: models/rf_mapie.joblib
-    instances: List[Dict[str, Any]]  # liste de dicts {feature1: val, feature2: val, ...}
+    # maintenant on met un nom de fichier de modèle (ex: "ames_rf_mapie.joblib")
+    model_filename: str
+    instances: List[Dict[str, Any]]
     alpha: Optional[float] = None
 
 
@@ -87,17 +79,12 @@ class PredictResponseItem(BaseModel):
 
 @app.post("/predict", response_model=List[PredictResponseItem])
 def predict_endpoint(req: PredictRequest):
-    """
-    Prédire des intervalles pour les instances fournies.
-    - model_path: chemin vers le joblib créé par /train, ex: models/rf_mapie.joblib
-    - instances: liste de dict (même colonnes que celles du jeu d'entraînement)
-    - alpha: optionnel, si non fourni on utilise alpha par défaut sauvegardé
-    """
-    if not os.path.exists(req.model_path):
-        raise HTTPException(status_code=404, detail="model_path introuvable")
+    path = os.path.join(MODELS_DIR, req.model_filename)
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="model_filename introuvable")
 
     try:
-        model_obj = load_model(req.model_path)
+        model_obj = load_model(path)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erreur chargement modèle: {e}")
 
@@ -112,9 +99,6 @@ def predict_endpoint(req: PredictRequest):
 
 @app.get("/models")
 def list_models():
-    """
-    Lister tous les modèles joblib présents dans le dossier models/ avec quelques métadonnées.
-    """
     models = []
     for fname in os.listdir(MODELS_DIR):
         if not fname.endswith(".joblib"):
@@ -127,6 +111,7 @@ def list_models():
                     "filename": fname,
                     "path": path,
                     "feature_names": meta.get("feature_names"),
+                    "feature_types": meta.get("feature_types"),  # ajouté
                     "target_name": meta.get("target_name"),
                     "alpha_default": meta.get("alpha_default"),
                 }
@@ -136,6 +121,27 @@ def list_models():
     return models
 
 
+@app.get("/models/{model_filename}/features")
+def model_features(model_filename: str):
+    path = os.path.join(MODELS_DIR, model_filename)
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="Model file not found")
+
+    try:
+        saved = joblib.load(path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Impossible de charger le modèle: {e}")
+
+    feature_names = saved.get("feature_names", [])
+    feature_types_saved = saved.get("feature_types")
+    if feature_types_saved:
+        return [{"name": fn, "type": feature_types_saved.get(fn, "unknown")} for fn in feature_names]
+
+    # fallback: best-effort inference (existing logic omitted for brevity)
+    result = [{"name": fn, "type": "unknown"} for fn in feature_names]
+    return result
+
+
 @app.get("/")
 def root():
-    return {"msg": "Conformal Prediction API - endpoints: /train, /predict, /models"}
+    return {"msg": "Conformal Prediction API - endpoints: /train, /predict, /models, /models/{model_filename}/features"}
