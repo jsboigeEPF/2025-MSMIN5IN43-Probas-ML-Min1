@@ -226,13 +226,6 @@ wandb/
 # ==========================================
 # SPÉCIFIQUE AU PROJET FAKE NEWS (Lourd)
 # ==========================================
-
-# Dossiers de données (conserve les dossiers mais ignore le contenu lourd)
-data/data_Bert/*
-data/data_camembert/*
-data/data_RoBERTa/*
-!data/**/.gitkeep
-
 # Dossiers de modèles (ne pas push les poids de plusieurs Go)
 models/bert_fakenews_ENG/
 models/camembert_fakenews_model/
