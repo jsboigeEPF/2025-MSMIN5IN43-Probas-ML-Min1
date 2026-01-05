@@ -1,0 +1,79 @@
+<div class="favorites-container">
+  <div class="header">
+    <h1>Mes Favoris</h1>
+    <p *ngIf="events.length > 0">{{ events.length }} événement{{ events.length > 1 ? 's' : '' }}</p>
+    <p *ngIf="events.length === 0 && !loading">Aucun événement favori</p>
+  </div>
+
+  <div class="loading-container" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Chargement...</p>
+  </div>
+
+  <div class="empty-state" *ngIf="!loading && events.length === 0">
+    <svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+    </svg>
+    <h2>Aucun favori pour le moment</h2>
+    <p>Commencez à ajouter des événements à vos favoris pour les retrouver ici</p>
+    <a routerLink="/events" class="btn btn-primary">
+      Découvrir des événements
+    </a>
+  </div>
+
+  <div class="events-grid" *ngIf="!loading && events.length > 0">
+    <div class="event-card" *ngFor="let event of events">
+      <div class="event-image" (click)="viewEventDetails(event.id)">
+        <img [src]="event.imageUrl || '/assets/placeholder.jpg'" [alt]="event.title">
+        <div class="event-overlay">
+          <button class="btn-view">Voir détails</button>
+        </div>
+      </div>
+      
+      <div class="event-content">
+        <div class="event-header">
+          <h3 (click)="viewEventDetails(event.id)">{{ event.title }}</h3>
+          <button class="btn-favorite active" (click)="removeFromFavorites(event)" title="Retirer des favoris">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+          </button>
+        </div>
+
+        <p class="event-description">{{ event.description }}</p>
+
+        <div class="event-meta">
+          <div class="meta-item" *ngIf="event.date">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span>{{ formatDate(event.date) }}</span>
+          </div>
+
+          <div class="meta-item" *ngIf="event.location">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+            <span>{{ event.location.city }}</span>
+          </div>
+
+          <div class="meta-item price">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="1" x2="12" y2="23"></line>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+            <span>{{ formatPrice(event.price) }}</span>
+          </div>
+        </div>
+
+        <div class="event-category" *ngIf="event.category">
+          <span class="category-badge">{{ event.category.name }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

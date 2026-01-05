@@ -1,0 +1,39 @@
+<section class="maps-header">
+  <div class="container">
+    <div class="header-content">
+      <div class="header-text">
+        <h1 class="page-title">Maps</h1>
+        <p class="page-subtitle">Visualisez les événements sur la carte</p>
+      </div>
+
+      <div class="filters-inline">
+        <div class="filter-field">
+          <label class="filter-label">Du</label>
+          <input type="date" [(ngModel)]="filters.startDate" (change)="applyFilters()" />
+        </div>
+        <div class="filter-field">
+          <label class="filter-label">Au</label>
+          <input type="date" [(ngModel)]="filters.endDate" (change)="applyFilters()" />
+        </div>
+        <button class="btn-clear" (click)="clearFilters()">Effacer</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="maps-section">
+  <div class="container">
+    <div class="map-wrapper" [style.height]="mapHeightPx">
+      <div id="events-map" class="map-container"></div>
+    </div>
+
+    <div class="map-meta">
+      <span class="count">{{ filteredEvents.length }} événement{{ filteredEvents.length > 1 ? 's' : '' }}</span>
+      <span *ngIf="loading" class="loading">Chargement…</span>
+      <span *ngIf="error" class="error">{{ error }}</span>
+      <span *ngIf="!loading && !error && filteredEvents.length === 0" class="empty-state">
+        Aucun événement trouvé pour ces dates.
+      </span>
+    </div>
+  </div>
+</section>
