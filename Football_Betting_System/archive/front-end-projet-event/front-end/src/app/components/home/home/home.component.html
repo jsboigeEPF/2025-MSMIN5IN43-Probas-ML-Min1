@@ -1,0 +1,80 @@
+<!-- Luxury Hero with Football Theme -->
+<section class="luxury-hero" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);">
+  <!-- Content -->
+  <div class="hero-content">
+    <div class="hero-subtitle">Plateforme de Paris</div>
+    <h1 class="hero-title">⚽ Paris sur le <span class="highlight">Football</span></h1>
+    <p class="hero-description">
+      Pariez sur les plus grands matchs de football. Analysez les joueurs et leurs statistiques FIFA.
+    </p>
+    <a routerLink="/events" class="cta-button">Voir les Matchs</a>
+  </div>
+</section>
+
+<!-- Luxury Events Grid -->
+<section class="luxury-events">
+  <div class="container">
+    <div class="section-header">
+      <div class="section-eyebrow">Cette Semaine</div>
+      <h2 class="section-title">Matchs À Venir</h2>
+      <p class="section-description">Les plus grands événements de football en attente de vos paris.</p>
+    </div>
+
+    <div *ngIf="loading" class="events-loading">
+      <div class="loading-card" *ngFor="let i of [1,2,3,4,5,6]"></div>
+    </div>
+
+    <div *ngIf="!loading && displayEvents.length > 0" class="events-grid">
+      <article *ngFor="let event of displayEvents; let i = index" 
+               class="event-card"
+               [routerLink]="['/events', event.id]">
+        <div class="event-image-container">
+          <img class="event-image" 
+               [src]="getEventImage(event)" 
+               [alt]="event.team1 + ' vs ' + event.team2"
+               (error)="onImageError($event)">
+          <div class="event-overlay"></div>
+        </div>
+
+        <div class="event-content">
+          <div class="event-category">⚽ Football</div>
+          <h3 class="event-title">{{ event.team1 }} vs {{ event.team2 }}</h3>
+          <div class="event-meta">
+            <span class="event-meta-item" *ngIf="event.date">
+              📅 {{ event.date | date:'dd/MM/yyyy' }}
+            </span>
+            <span class="event-meta-item">
+              🎯 Cotes: {{ event.odds_team1 | number:'1.2-2' }}
+            </span>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <div *ngIf="!loading && displayEvents.length === 0" class="no-events">
+      <p>Aucun match disponible pour le moment.</p>
+    </div>
+  </div>
+</section>
+
+              <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              {{ formatDate(event.date) }}
+            </span>
+            <span class="event-meta-item" *ngIf="event.location?.city as city">
+              <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              {{ city }}
+            </span>
+          </div>
+          <p class="event-description">{{ event.description }}</p>
+          <div class="event-action">Voir plus
+            <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <div class="view-all-container">
+      <a routerLink="/events" class="btn view-all-btn">Voir tous les événements</a>
+    </div>
+  </div>
+</section>

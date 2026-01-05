@@ -1,0 +1,87 @@
+<section class="about-hero">
+  <div class="container">
+    <p class="eyebrow">À propos</p>
+    <h1>EventApp, le studio d'expériences culturelles</h1>
+    <p class="hero-text">
+      Nous imaginons une nouvelle manière de découvrir concerts, expositions et rencontres. Une sélection éditorialisée, un design premium, une équipe passionnée par l'idée de faire vibrer les publics.
+    </p>
+    <div class="hero-stats">
+      <div class="stat" *ngFor="let stat of stats">
+        <div class="value">{{ stat.value }}</div>
+        <div class="label">{{ stat.label }}</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="mission">
+  <div class="container mission-grid">
+    <div class="mission-text">
+      <p class="eyebrow">Manifesto</p>
+      <h2>{{ introHighlight }}</h2>
+      <p>
+        EventApp est née d'un constat simple : les expériences qui marquent méritent une scène à la hauteur. Notre plateforme mêle technologie, editorial et sensibilité artistique pour connecter des créateurs inspirés et des publics curieux.
+      </p>
+      <p>
+        Nous travaillons avec des maisons de production, des lieux iconiques et des artistes émergents pour imaginer des temps forts qui dépassent l'écran. Chaque page, chaque visuel et chaque recommandation sont pensés pour prolonger l'émotion.
+      </p>
+    </div>
+    <div class="mission-media">
+      <img src="https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=900&q=80" alt="Équipe EventApp" loading="lazy">
+      <div class="media-overlay">
+        <span>Créativité
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="values">
+  <div class="container">
+    <p class="eyebrow">Nos piliers</p>
+    <h3>La signature EventApp</h3>
+    <div class="values-grid">
+      <article *ngFor="let value of values" class="value-card">
+        <h4>{{ value.title }}</h4>
+        <p>{{ value.description }}</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="team">
+  <div class="container">
+    <div class="team-header">
+      <p class="eyebrow">L'équipe</p>
+      <h3>Les artisans de l'expérience</h3>
+      <p>Une équipe pluridisciplinaire qui marie production événementielle, design et technologie.</p>
+    </div>
+    <div class="team-grid">
+      <article *ngFor="let member of team" class="team-card">
+        <div class="image-wrapper">
+          <img [src]="member.imageUrl" [alt]="member.name" loading="lazy" />
+          <div class="image-overlay"></div>
+        </div>
+        <div class="team-content">
+          <p class="role">{{ member.role }}</p>
+          <h4>{{ member.name }}</h4>
+          <p class="bio">{{ member.bio }}</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="container cta-box">
+    <div>
+      <p class="eyebrow">Travaillons ensemble</p>
+      <h3>Vous organisez un événement ou souhaitez rejoindre l'aventure ?</h3>
+    </div>
+    <div class="cta-actions">
+      <a routerLink="/events" class="btn">Découvrir les événements</a>
+      <a href="mailto:abdellah.sofi1@epdedu.fr?subject=Demande de contact - EventApp&body=Bonjour,%0D%0A%0D%0AJe souhaite vous contacter concernant..." class="btn btn-outline">Nous écrire</a>
+    </div>
+  </div>
+</section>
