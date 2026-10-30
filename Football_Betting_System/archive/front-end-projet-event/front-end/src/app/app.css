@@ -1,0 +1,18 @@
+
+/* Root layout adjustments for luxury design */
+.app-main {
+	min-height: 100vh;
+	background: var(--black);
+	color: var(--white);
+	position: relative;
+}
+
+/* Fade animations for routed views */
+:host ::ng-deep router-outlet + * {
+	animation: viewFade 0.6s var(--ease-smooth);
+}
+
+@keyframes viewFade {
+	from { opacity: 0; transform: translateY(12px); }
+	to { opacity: 1; transform: translateY(0); }
+}

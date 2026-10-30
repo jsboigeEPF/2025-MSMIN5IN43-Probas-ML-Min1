@@ -1,0 +1,120 @@
+<nav class="navbar" [class.scrolled]="isScrolled">
+  <div class="navbar-container">
+    <!-- Logo -->
+    <a routerLink="/" class="navbar-logo" (click)="closeMobileMenu()">
+      <span class="logo-text">EventApp</span>
+    </a>
+
+    <!-- Desktop Navigation -->
+    <div class="navbar-nav">
+      <a routerLink="/events" routerLinkActive="active" class="nav-link">
+        Événements
+      </a>
+      <a routerLink="/maps" routerLinkActive="active" class="nav-link">
+        Maps
+      </a>
+      <a routerLink="/about" routerLinkActive="active" class="nav-link">
+        À propos
+      </a>
+    </div>
+
+    <!-- Auth Section -->
+    <div class="navbar-auth">
+      <ng-container *ngIf="!currentUser; else userMenu">
+        <a routerLink="/login" class="btn btn-ghost">
+          Connexion
+        </a>
+        <a routerLink="/signup" class="btn btn-primary">
+          S'inscrire
+        </a>
+      </ng-container>
+
+      <ng-template #userMenu>
+        <div class="user-menu-container">
+          <button (click)="toggleUserMenu()" class="user-button">
+            <div class="user-avatar">
+              <span class="avatar-text">{{ currentUser?.name?.charAt(0)?.toUpperCase() }}</span>
+            </div>
+            <span class="user-name">{{ currentUser?.name }}</span>
+            <svg class="dropdown-icon" [class.rotated]="isUserMenuOpen" width="12" height="12" viewBox="0 0 12 12">
+              <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+          </button>
+
+          <!-- Desktop Dropdown -->
+          <div class="user-dropdown" [class.show]="isUserMenuOpen">
+            <a routerLink="/profile" class="dropdown-item" (click)="closeUserMenu()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+              Mon profil
+            </a>
+            <a routerLink="/favorites" class="dropdown-item" (click)="closeUserMenu()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+              Mes favoris
+            </a>
+            <a *ngIf="isAdmin()" routerLink="/create-event" class="dropdown-item" (click)="closeUserMenu()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14M5 12h14"/>
+              </svg>
+              Créer un événement
+            </a>
+            <hr class="dropdown-divider">
+            <button (click)="logout()" class="dropdown-item logout">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16,17 21,12 16,7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+              Déconnexion
+            </button>
+          </div>
+        </div>
+      </ng-template>
+    </div>
+
+    <!-- Mobile Menu Button -->
+    <button (click)="toggleMobileMenu()" class="mobile-menu-btn" [class.active]="isMobileMenuOpen">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </div>
+
+  <!-- Mobile Menu Overlay -->
+  <div class="mobile-menu-overlay" [class.show]="isMobileMenuOpen" (click)="closeMobileMenu()"></div>
+
+  <!-- Mobile Menu -->
+  <div class="mobile-menu" [class.show]="isMobileMenuOpen">
+    <div class="mobile-menu-content">
+      <a routerLink="/events" routerLinkActive="active" class="mobile-nav-link" (click)="closeMobileMenu()">
+        Événements
+      </a>
+      <a routerLink="/maps" routerLinkActive="active" class="mobile-nav-link" (click)="closeMobileMenu()">
+        Maps
+      </a>
+      <a routerLink="/about" routerLinkActive="active" class="mobile-nav-link" (click)="closeMobileMenu()">
+        À propos
+      </a>
+
+      <ng-container *ngIf="currentUser">
+        <hr class="mobile-divider">
+        <a routerLink="/profile" class="mobile-nav-link" (click)="closeMobileMenu()">
+          Mon profil
+        </a>
+        <a routerLink="/favorites" class="mobile-nav-link" (click)="closeMobileMenu()">
+          Mes favoris
+        </a>
+        <a *ngIf="isAdmin()" routerLink="/create-event" class="mobile-nav-link" (click)="closeMobileMenu()">
+          Créer un événement
+        </a>
+        <button (click)="logout()" class="mobile-nav-link logout">
+          Déconnexion
+        </button>
+      </ng-container>
+    </div>
+  </div>
+</nav>

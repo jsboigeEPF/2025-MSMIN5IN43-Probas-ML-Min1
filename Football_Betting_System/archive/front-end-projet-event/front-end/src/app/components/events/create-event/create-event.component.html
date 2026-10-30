@@ -1,0 +1,151 @@
+<div class="create-event-container">
+  <div class="container">
+    <div class="page-header">
+      <h1 class="page-title">Créer un Événement</h1>
+      <p class="page-subtitle">Partagez une nouvelle expérience avec la communauté</p>
+    </div>
+
+    <form class="event-form" (ngSubmit)="onSubmit()" #eventForm="ngForm">
+      <!-- Success Message -->
+      <div *ngIf="success" class="alert alert-success">
+        ✓ Événement créé avec succès ! Redirection en cours...
+      </div>
+
+      <!-- Error Message -->
+      <div *ngIf="error" class="alert alert-error">
+        {{ error }}
+      </div>
+
+      <!-- Title -->
+      <div class="form-group">
+        <label for="title">Titre de l'événement *</label>
+        <input
+          type="text"
+          id="title"
+          name="title"
+          [(ngModel)]="event.title"
+          required
+          placeholder="Ex: Concert Jazz au Théâtre"
+          class="form-control"
+        />
+      </div>
+
+      <!-- Description -->
+      <div class="form-group">
+        <label for="description">Description *</label>
+        <textarea
+          id="description"
+          name="description"
+          [(ngModel)]="event.description"
+          required
+          rows="5"
+          placeholder="Décrivez l'événement en détail..."
+          class="form-control"
+        ></textarea>
+      </div>
+
+      <!-- Date and Price Row -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="date">Date et heure *</label>
+          <input
+            type="datetime-local"
+            id="date"
+            name="date"
+            [(ngModel)]="event.date"
+            required
+            class="form-control"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="price">Prix (€)</label>
+          <input
+            type="number"
+            id="price"
+            name="price"
+            [(ngModel)]="event.price"
+            min="0"
+            step="0.01"
+            placeholder="0.00"
+            class="form-control"
+          />
+        </div>
+      </div>
+
+      <!-- Category and Location Row -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="categoryId">Catégorie *</label>
+          <select
+            id="categoryId"
+            name="categoryId"
+            [(ngModel)]="event.categoryId"
+            required
+            class="form-control"
+          >
+            <option [ngValue]="undefined" disabled>Sélectionner une catégorie</option>
+            <option *ngFor="let category of categories" [ngValue]="category.id">
+              {{ category.name }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="locationId">Lieu *</label>
+          <select
+            id="locationId"
+            name="locationId"
+            [(ngModel)]="event.locationId"
+            required
+            class="form-control"
+          >
+            <option [ngValue]="undefined" disabled>Sélectionner un lieu</option>
+            <option *ngFor="let location of locations" [ngValue]="location.id">
+              {{ location.name }} - {{ location.city }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Image URL -->
+      <div class="form-group">
+        <label for="imageUrl">URL de l'image</label>
+        <input
+          type="url"
+          id="imageUrl"
+          name="imageUrl"
+          [(ngModel)]="event.imageUrl"
+          placeholder="https://example.com/image.jpg"
+          class="form-control"
+        />
+        <small class="form-hint">Laissez vide pour utiliser l'image par défaut de la catégorie</small>
+      </div>
+
+      <!-- Ticket Link -->
+      <div class="form-group">
+        <label for="link">Lien d'achat des billets</label>
+        <input
+          type="url"
+          id="link"
+          name="link"
+          [(ngModel)]="event.link"
+          placeholder="https://tickets.example.com/event"
+          class="form-control"
+        />
+        <small class="form-hint">URL vers la page où les utilisateurs peuvent acheter des billets</small>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="cancel()" [disabled]="loading">
+          Annuler
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="loading || !eventForm.form.valid">
+          <span *ngIf="loading">Création en cours...</span>
+          <span *ngIf="!loading">Créer l'événement</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

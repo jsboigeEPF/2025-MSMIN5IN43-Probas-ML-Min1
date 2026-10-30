@@ -1,0 +1,61 @@
+<div class="profile-container" *ngIf="user">
+  <div class="profile-header">
+    <div class="profile-avatar">
+      <img *ngIf="user.avatarUrl" [src]="user.avatarUrl" [alt]="user.name">
+      <div *ngIf="!user.avatarUrl" class="avatar-placeholder">
+        {{ getInitials(user.name) }}
+      </div>
+    </div>
+    <div class="profile-info">
+      <h1>{{ user.name }}</h1>
+      <p class="email">{{ user.email }}</p>
+      <span class="role-badge" [class.admin]="user.role === 'ADMIN'">
+        {{ user.role || 'USER' }}
+      </span>
+    </div>
+  </div>
+
+  <div class="profile-body">
+    <div class="info-section">
+      <h2>Information</h2>
+      
+      <div class="info-item">
+        <span class="label">Nom</span>
+        <span class="value">{{ user.name }}</span>
+      </div>
+
+      <div class="info-item">
+        <span class="label">Email</span>
+        <span class="value">{{ user.email }}</span>
+      </div>
+
+      <div class="info-item" *ngIf="user.location">
+        <span class="label">Ville</span>
+        <span class="value">{{ user.location.city }}</span>
+      </div>
+
+      <div class="info-item">
+        <span class="label">Membre depuis</span>
+        <span class="value">{{ formatDate(user.createdAt) }}</span>
+      </div>
+
+      <div class="info-item" *ngIf="user.bio">
+        <span class="label">Bio</span>
+        <span class="value bio-text">{{ user.bio }}</span>
+      </div>
+    </div>
+
+    <div class="actions-section">
+      <button class="btn btn-primary" (click)="goToFavorites()">
+        Mes Favoris
+      </button>
+      <button class="btn btn-outline" (click)="logout()">
+        Déconnexion
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="loading-container" *ngIf="loading">
+  <div class="spinner"></div>
+</div>
